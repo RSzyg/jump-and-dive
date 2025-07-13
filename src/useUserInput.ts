@@ -1,6 +1,7 @@
 function useUserInput () {
   let _isArrowLeftPressed = false;
   let _isArrowRightPressed = false;
+  let _isArrowUpPressed = false;
 
   const isArrowLeftPressed = () => {
     return _isArrowLeftPressed;
@@ -8,13 +9,19 @@ function useUserInput () {
   const isArrowRightPressed = () => {
     return _isArrowRightPressed;
   }
+  const isArrowUpPressed = () => {
+    return _isArrowUpPressed;
+  }
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'ArrowRight') {
       _isArrowRightPressed = true;
     }
     if (event.key === 'ArrowLeft') {
-      _isArrowLeftPressed = true
+      _isArrowLeftPressed = true;
+    }
+    if (event.key === 'ArrowUp') {
+      _isArrowUpPressed = true;
     }
   }
   const handleKeyUp = (event: KeyboardEvent) => {
@@ -23,6 +30,9 @@ function useUserInput () {
     }
     if (event.key === 'ArrowLeft') {
       _isArrowLeftPressed = false;
+    }
+    if (event.key === 'ArrowUp') {
+      _isArrowUpPressed = false;
     }
   }
 
@@ -39,6 +49,7 @@ function useUserInput () {
   return {
     isArrowLeftPressed,
     isArrowRightPressed,
+    isArrowUpPressed,
     register,
     unregister
   }

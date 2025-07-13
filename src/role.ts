@@ -1,14 +1,16 @@
-import { AnimatedSprite, Application, Container, Particle, ParticleContainer, Point, PointData, Renderer, Sprite, Texture, Ticker } from "pixi.js";
+import { AnimatedSprite, Application, Container, Particle, ParticleContainer, Point, PointData, Renderer, Texture, Ticker } from "pixi.js";
 import { mainCircle, miniCircle } from "./graphics";
 import { sharedUserInput } from "./useUserInput";
 
 const trailSize = 14;
 
-const moveSpeed = 6;
-const rotationSpeed = 0.1;
-const gravity = 10;
+const moveAcceleration = 1;
+const maxMoveSpeed = 6;
+const jumpSpeed = -12;
+const animationSpeed = 0.6;
+const gravity = 0.6;
 
-function createRole(renderer: Renderer, initialPosition: Point): AnimatedSprite {
+function createRole(renderer: Renderer, initialPosition: PointData): AnimatedSprite {
   const roleContainer = new Container({ isRenderGroup: true });
   const body = mainCircle.clone();
   const leftHand = miniCircle.clone();
@@ -34,7 +36,7 @@ function createRole(renderer: Renderer, initialPosition: Point): AnimatedSprite 
   return sprite
 }
 
-function createTrail(renderer: Renderer, initialPosition: Point): ParticleContainer {
+function createTrail(renderer: Renderer, initialPosition: PointData): ParticleContainer {
   const trailTexture = renderer.generateTexture(mainCircle)
   const trailParticleContainer = new ParticleContainer({
     dynamicProperties: {
@@ -44,7 +46,7 @@ function createTrail(renderer: Renderer, initialPosition: Point): ParticleContai
       color: false,
     },
   });
-  for (let i = 0; i < trailSize; i++) {
+  for (let i = 1; i <= trailSize; i++) {
     const particle = new Particle({
       texture: trailTexture,
       x: initialPosition.x,
@@ -65,11 +67,11 @@ export class Role {
   private roleMainPart: AnimatedSprite;
   private trail: ParticleContainer;
 
-  public isGrounded: boolean = false;
+  private canJump: boolean = true;
+  public isJumping: boolean = true;
   public velocity: Point = new Point(0, 0);
-  private radians: number = 0;
 
-  constructor(app: Application, initialPosition: Point) {
+  constructor(app: Application, initialPosition: PointData) {
     this.roleMainPart = createRole(app.renderer, initialPosition);
     this.trail = createTrail(app.renderer, initialPosition);
 
@@ -87,26 +89,43 @@ export class Role {
   }
 
   private handleMovement(ticker: Ticker) {
-    this.velocity.x = 0; // Reset velocity each frame
-    this.velocity.y = this.isGrounded ? 0 : gravity * ticker.deltaTime; // Apply gravity
-
-    const { isArrowLeftPressed, isArrowRightPressed } = sharedUserInput;
-    if (isArrowRightPressed()) {
-      this.velocity.x += moveSpeed * ticker.deltaTime;
-      this.radians += rotationSpeed * ticker.deltaTime;
+    const { isArrowLeftPressed, isArrowRightPressed, isArrowUpPressed } = sharedUserInput;
+    // Handle horizontal movement with constant speed
+    if (
+      (isArrowLeftPressed() && isArrowRightPressed()) ||
+      (!isArrowLeftPressed() && !isArrowRightPressed())
+    ) {
+      this.velocity.x = 0;
+    } else if (isArrowRightPressed()) {
+      this.velocity.x = Math.min(this.velocity.x + moveAcceleration * ticker.deltaTime, maxMoveSpeed);
+    } else if (isArrowLeftPressed()) {
+      this.velocity.x = Math.max(this.velocity.x - moveAcceleration * ticker.deltaTime, -maxMoveSpeed);
     }
-    if (isArrowLeftPressed()) {
-      this.velocity.x -= moveSpeed * ticker.deltaTime;
-      this.radians -= rotationSpeed * ticker.deltaTime;
-    }
+    this.roleMainPart.position.x += this.velocity.x * ticker.deltaTime;
 
-    this.roleMainPart.position.x += this.velocity.x;
-    this.roleMainPart.position.y += this.velocity.y;
+    // Handle vertical movement with constant acceleration
+    if (!isArrowUpPressed()) {
+      this.canJump = true;
+    }
+    if (this.isJumping) {
+      this.velocity.y += gravity * ticker.deltaTime;
+      if (this.velocity.y < 0 && !isArrowUpPressed()) {
+        this.velocity.y += 2 * gravity * ticker.deltaTime;
+      }
+    }
+    if (!this.isJumping && this.canJump && isArrowUpPressed()) {
+      this.velocity.y = jumpSpeed;
+      this.isJumping = true;
+      this.canJump = false;
+    }
+    this.roleMainPart.position.y += this.velocity.y * ticker.deltaTime;
+
+    // Handle sprite animation
     if (this.velocity.x > 0) {
-      this.roleMainPart.animationSpeed = 0.6;
+      this.roleMainPart.animationSpeed = animationSpeed;
       this.roleMainPart.play();
     } else if (this.velocity.x < 0) {
-      this.roleMainPart.animationSpeed = -0.6;
+      this.roleMainPart.animationSpeed = -animationSpeed;
       this.roleMainPart.play();
     } else {
       this.roleMainPart.gotoAndStop(0);

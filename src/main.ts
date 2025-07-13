@@ -1,9 +1,7 @@
-import { Application, Bounds, Container, Point } from "pixi.js";
+import { Application, Point } from "pixi.js";
 import { sharedUserInput } from "./useUserInput";
 import { Role } from "./role";
 import { initializeGround } from "./ground";
-import { mainCircle, miniCircle } from "./graphics";
-
 
 (async () => {
   // Create a new application
@@ -33,7 +31,8 @@ import { mainCircle, miniCircle } from "./graphics";
       console.log('>>> ground bound:', ground.getBounds(), ground.hitArea);
       if (roleBounds.maxY >= groundBounds.minY) {
         console.log('>>> role hit ground', roleBounds.maxY, '>=', groundBounds.minY);
-        role.isGrounded = true;
+        role.isJumping = false;
+        role.velocity.y = 0;
         role.position.y = groundBounds.minY - roleBounds.height / 2;
         console.log('>>> correction role y position:', role.position.y, role.getBounds());
       }
