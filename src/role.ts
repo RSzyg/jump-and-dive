@@ -1,10 +1,14 @@
 import { AnimatedSprite, Application, Container, Particle, ParticleContainer, Point, PointData, Renderer, Texture, Ticker } from "pixi.js";
 import { mainCircle, miniCircle } from "./graphics";
 import { sharedUserInput } from "./useUserInput";
+import { getLinearSmooth } from "./smooth";
 
-const trailSize = 14;
+const trailSize = 40;
+const trailRemainder = 6;
+const minTrailSizeScale = 0.16;
+const historyPositionSize = 14;
 
-const moveAcceleration = 1;
+const moveAcceleration = 0.5;
 const maxMoveSpeed = 6;
 const jumpSpeed = -12;
 const animationSpeed = 0.6;
@@ -46,13 +50,14 @@ function createTrail(renderer: Renderer, initialPosition: PointData): ParticleCo
       color: false,
     },
   });
+  const diff = (1 - minTrailSizeScale) / (trailSize - trailRemainder)
   for (let i = 1; i <= trailSize; i++) {
     const particle = new Particle({
       texture: trailTexture,
       x: initialPosition.x,
       y: initialPosition.y,
-      scaleX: Math.max(1 - i * 0.07, 0.16),
-      scaleY: Math.max(1 - i * 0.07, 0.16),
+      scaleX: Math.max(1 - i * diff, minTrailSizeScale),
+      scaleY: Math.max(1 - i * diff, minTrailSizeScale),
       anchorX: 0.5,
       anchorY: 0.5,
     });
@@ -67,6 +72,9 @@ export class Role {
   private roleMainPart: AnimatedSprite;
   private trail: ParticleContainer;
 
+  private historyXPositions: number[] = [];
+  private historyYPositions: number[] = [];
+
   private canJump: boolean = true;
   public isJumping: boolean = true;
   public velocity: Point = new Point(0, 0);
@@ -74,6 +82,11 @@ export class Role {
   constructor(app: Application, initialPosition: PointData) {
     this.roleMainPart = createRole(app.renderer, initialPosition);
     this.trail = createTrail(app.renderer, initialPosition);
+
+    for (let i = 0; i < historyPositionSize; i++) {
+      this.historyXPositions.push(initialPosition.x);
+      this.historyYPositions.push(initialPosition.y);
+    }
 
     app.stage.addChild(this.trail, this.roleMainPart);
 
@@ -130,18 +143,20 @@ export class Role {
     } else {
       this.roleMainPart.gotoAndStop(0);
     }
+
+    // Update history positions
+    this.historyXPositions.pop();
+    this.historyXPositions.unshift(this.roleMainPart.position.x);
+    this.historyYPositions.pop();
+    this.historyYPositions.unshift(this.roleMainPart.position.y);
   }
 
   private handleTrailEffect() {
-    for (let i = trailSize - 1; i > 0; i--) {
-      const particle = this.trail.particleChildren[i];
-      const nextParticle = this.trail.particleChildren[i - 1];
-      particle.x = nextParticle.x;
-      particle.y = nextParticle.y;
+    const particleCount = this.trail.particleChildren.length;
+    for (let i = 0; i < particleCount; i++) {
+      this.trail.particleChildren[i].x = getLinearSmooth(this.historyXPositions, (i / particleCount) * this.historyXPositions.length);
+      this.trail.particleChildren[i].y = getLinearSmooth(this.historyYPositions, (i / particleCount) * this.historyYPositions.length);
     }
-    const lastParticle = this.trail.particleChildren[0];
-    lastParticle.x = this.roleMainPart.position.x;
-    lastParticle.y = this.roleMainPart.position.y;
   }
 
   private addTicker(app: Application) {
