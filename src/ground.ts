@@ -1,5 +1,8 @@
-import { Application, Container, Polygon } from "pixi.js";
-import { groundPiece } from "./graphics";
+import { Application, Container, Graphics } from "pixi.js";
+
+const groundPiece = new Graphics()
+  .rect(0, 0, 50, 50)
+  .fill('#415e54')
 
 export function initializeGround(app: Application) {
   const ground = new Container({ isRenderGroup: true });

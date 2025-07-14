@@ -1,11 +1,13 @@
-import { AnimatedSprite, Application, Container, Particle, ParticleContainer, Point, PointData, Renderer, Texture, Ticker } from "pixi.js";
-import { mainCircle, miniCircle } from "./graphics";
+import { AnimatedSprite, Application, Container, Graphics, Particle, ParticleContainer, Point, PointData, Renderer, Texture, Ticker } from "pixi.js";
 import { sharedUserInput } from "./useUserInput";
 import { getLinearSmooth } from "./smooth";
 
+const roleBodySize = 16;
+const roleHandSize = 4;
+
 const trailSize = 40;
 const trailRemainder = 6;
-const minTrailSizeScale = 0.16;
+const minTrailSizeScale = 0.18;
 const historyPositionSize = 14;
 
 const moveAcceleration = 0.5;
@@ -15,14 +17,13 @@ const animationSpeed = 0.6;
 const gravity = 0.6;
 
 function createRole(renderer: Renderer, initialPosition: PointData): AnimatedSprite {
+  const body = new Graphics().circle(0, 0, roleBodySize / 2).fill("#000")
+  const leftHand = new Graphics().circle(0, 0, roleHandSize / 2).fill("#fff");
+  leftHand.pivot.set((roleBodySize - roleHandSize) / 2, 0);
+  const rightHand = leftHand.clone();
+  rightHand.pivot.set(-(roleBodySize - roleHandSize) / 2, 0);
+
   const roleContainer = new Container({ isRenderGroup: true });
-  const body = mainCircle.clone();
-  const leftHand = miniCircle.clone();
-  const rightHand = miniCircle.clone();
-  leftHand.position.set(0, 0);
-  leftHand.pivot.set(8, 0);
-  rightHand.position.set(0, 0);
-  rightHand.pivot.set(-8, 0);
   roleContainer.addChild(body, leftHand, rightHand);
 
   const textures: Texture[] = [];
@@ -41,7 +42,8 @@ function createRole(renderer: Renderer, initialPosition: PointData): AnimatedSpr
 }
 
 function createTrail(renderer: Renderer, initialPosition: PointData): ParticleContainer {
-  const trailTexture = renderer.generateTexture(mainCircle)
+  const circle = new Graphics().circle(0, 0, roleBodySize / 2).fill("#000")
+  const trailTexture = renderer.generateTexture(circle)
   const trailParticleContainer = new ParticleContainer({
     dynamicProperties: {
       position: true,
@@ -61,7 +63,6 @@ function createTrail(renderer: Renderer, initialPosition: PointData): ParticleCo
       anchorX: 0.5,
       anchorY: 0.5,
     });
-
     trailParticleContainer.addParticle(particle);
   }
 
