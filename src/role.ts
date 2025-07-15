@@ -11,7 +11,7 @@ const minTrailSizeScale = 0.18;
 const historyPositionSize = 14;
 
 const moveAcceleration = 0.5;
-const maxMoveSpeed = 6;
+const maxMoveSpeed = 5;
 const jumpSpeed = -12;
 const animationSpeed = 0.6;
 const gravity = 0.6;
