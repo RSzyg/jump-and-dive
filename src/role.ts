@@ -1,6 +1,7 @@
 import { AnimatedSprite, Application, Container, Graphics, Particle, ParticleContainer, Point, PointData, Renderer, Texture, Ticker } from "pixi.js";
 import { sharedUserInput } from "./useUserInput";
 import { getLinearSmooth } from "./smooth";
+import { World } from "./world";
 
 const roleBodySize = 16;
 const roleHandSize = 4;
@@ -16,7 +17,7 @@ const jumpSpeed = -12;
 const animationSpeed = 0.6;
 const gravity = 0.6;
 
-function createRole(renderer: Renderer, initialPosition: PointData): AnimatedSprite {
+function createRole(renderer: Renderer): AnimatedSprite {
   const body = new Graphics().circle(0, 0, roleBodySize / 2).fill("#000")
   const leftHand = new Graphics().circle(0, 0, roleHandSize / 2).fill("#fff");
   leftHand.pivot.set((roleBodySize - roleHandSize) / 2, 0);
@@ -36,7 +37,6 @@ function createRole(renderer: Renderer, initialPosition: PointData): AnimatedSpr
 
   const sprite = new AnimatedSprite(textures);
   sprite.anchor.set(0.5, 0.5);
-  sprite.position.copyFrom(initialPosition);
 
   return sprite
 }
@@ -80,13 +80,14 @@ export class Role {
   public isJumping: boolean = true;
   public velocity: Point = new Point(0, 0);
 
-  constructor(app: Application, initialPosition: PointData) {
-    this.roleMainPart = createRole(app.renderer, initialPosition);
-    this.trail = createTrail(app.renderer, initialPosition);
+  constructor(app: Application, world: World) {
+    this.roleMainPart = createRole(app.renderer);
+    this.roleMainPart.position.copyFrom(world.startPosition);
+    this.trail = createTrail(app.renderer, world.startPosition);
 
     for (let i = 0; i < historyPositionSize; i++) {
-      this.historyXPositions.push(initialPosition.x);
-      this.historyYPositions.push(initialPosition.y);
+      this.historyXPositions.push(world.startPosition.x);
+      this.historyYPositions.push(world.startPosition.y);
     }
 
     app.stage.addChild(this.trail, this.roleMainPart);

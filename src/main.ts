@@ -1,9 +1,9 @@
 import { Application, Point } from "pixi.js";
 import { sharedUserInput } from "./useUserInput";
 import { Role } from "./role";
-import { Ground } from "./ground";
+import { World } from "./world";
 
-import mapInfo from './maps/one'
+import levelInfo from './levels/one'
 
 (async () => {
   // Create a new application
@@ -15,10 +15,10 @@ import mapInfo from './maps/one'
   const { register: registerUserInput } = sharedUserInput;
   registerUserInput();
 
-  const ground = new Ground(app, mapInfo);
+  const world = new World(app, levelInfo);
 
   // Initialize the role
-  const role = new Role(app, ground.startPosition);
+  const role = new Role(app, world);
   
 
   // app.ticker.add(() => {
