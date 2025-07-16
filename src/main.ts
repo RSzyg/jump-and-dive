@@ -19,27 +19,5 @@ import levelInfo from './levels/one'
 
   // Initialize the role
   const role = new Role(app, world);
-  
 
-  // app.ticker.add(() => {
-  //   // Test role hit ground
-  //   const roleBounds = role.getBounds();
-  //   const groundBounds = ground.getBounds();
-  //   if (
-  //     roleBounds.minX < groundBounds.maxX &&
-  //     roleBounds.maxX > groundBounds.minX &&
-  //     roleBounds.minY < groundBounds.maxY &&
-  //     roleBounds.maxY > groundBounds.minY
-  //   ) {
-  //     console.log('>>> role bound:', role.getBounds());
-  //     console.log('>>> ground bound:', ground.getBounds(), ground.hitArea);
-  //     if (roleBounds.maxY >= groundBounds.minY) {
-  //       console.log('>>> role hit ground', roleBounds.maxY, '>=', groundBounds.minY);
-  //       role.isJumping = false;
-  //       role.velocity.y = 0;
-  //       role.position.y = groundBounds.minY - roleBounds.height / 2;
-  //       console.log('>>> correction role y position:', role.position.y, role.getBounds());
-  //     }
-  //   }
-  // });
 })();

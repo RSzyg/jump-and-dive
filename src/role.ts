@@ -70,21 +70,26 @@ function createTrail(renderer: Renderer, initialPosition: PointData): ParticleCo
 }
 
 export class Role {
+  private world: World;
+
   private roleMainPart: AnimatedSprite;
   private trail: ParticleContainer;
 
+  private nextPosition: Point;
   private historyXPositions: number[] = [];
   private historyYPositions: number[] = [];
 
   private canJump: boolean = true;
-  public isJumping: boolean = true;
+  public isGrounded: boolean = false;
   public velocity: Point = new Point(0, 0);
 
   constructor(app: Application, world: World) {
+    this.world = world;
     this.roleMainPart = createRole(app.renderer);
     this.roleMainPart.position.copyFrom(world.startPosition);
     this.trail = createTrail(app.renderer, world.startPosition);
 
+    this.nextPosition = new Point();
     for (let i = 0; i < historyPositionSize; i++) {
       this.historyXPositions.push(world.startPosition.x);
       this.historyYPositions.push(world.startPosition.y);
@@ -103,7 +108,7 @@ export class Role {
     return this.roleMainPart.position;
   }
 
-  private handleMovement(ticker: Ticker) {
+  private updateMovementInfo(ticker: Ticker) {
     const { isArrowLeftPressed, isArrowRightPressed, isArrowUpPressed } = sharedUserInput;
     // Handle horizontal movement with constant speed
     if (
@@ -116,24 +121,34 @@ export class Role {
     } else if (isArrowLeftPressed()) {
       this.velocity.x = Math.max(this.velocity.x - moveAcceleration * ticker.deltaTime, -maxMoveSpeed);
     }
-    this.roleMainPart.position.x += this.velocity.x * ticker.deltaTime;
+    this.nextPosition.x = this.roleMainPart.position.x + this.velocity.x * ticker.deltaTime;
 
     // Handle vertical movement with constant acceleration
     if (!isArrowUpPressed()) {
       this.canJump = true;
     }
-    if (this.isJumping) {
+    if (!this.isGrounded) {
       this.velocity.y += gravity * ticker.deltaTime;
       if (this.velocity.y < 0 && !isArrowUpPressed()) {
         this.velocity.y += 2 * gravity * ticker.deltaTime;
       }
     }
-    if (!this.isJumping && this.canJump && isArrowUpPressed()) {
+    if (this.isGrounded && this.canJump && isArrowUpPressed()) {
       this.velocity.y = jumpSpeed;
-      this.isJumping = true;
+      this.isGrounded = false;
       this.canJump = false;
     }
-    this.roleMainPart.position.y += this.velocity.y * ticker.deltaTime;
+    this.nextPosition.y = this.roleMainPart.position.y + this.velocity.y * ticker.deltaTime;
+  }
+
+  private handleMovement() {
+    // Update current position
+    this.position.copyFrom(this.nextPosition);
+    // Update history positions
+    this.historyXPositions.pop();
+    this.historyXPositions.unshift(this.position.x);
+    this.historyYPositions.pop();
+    this.historyYPositions.unshift(this.position.y);
 
     // Handle sprite animation
     if (this.velocity.x > 0) {
@@ -145,12 +160,6 @@ export class Role {
     } else {
       this.roleMainPart.gotoAndStop(0);
     }
-
-    // Update history positions
-    this.historyXPositions.pop();
-    this.historyXPositions.unshift(this.roleMainPart.position.x);
-    this.historyYPositions.pop();
-    this.historyYPositions.unshift(this.roleMainPart.position.y);
   }
 
   private handleTrailEffect() {
@@ -161,9 +170,56 @@ export class Role {
     }
   }
 
+  private predictCollision() {
+    const roleBounds = this.getBounds();
+    const deltaX = this.nextPosition.x - this.position.x;
+    const deltaY = this.nextPosition.y - this.position.y;
+
+    let isCollided = { x: false, y: false };
+    for (const ground of this.world.entities) {
+      const groundBounds = ground.getBounds();
+      
+      // Check X-Axis
+      if (
+        roleBounds.minX + deltaX < groundBounds.maxX &&
+        roleBounds.maxX + deltaX > groundBounds.minX &&
+        roleBounds.minY  < groundBounds.maxY &&
+        roleBounds.maxY > groundBounds.minY
+      ) {
+        isCollided.x = true;
+        this.velocity.x = 0;
+        if (deltaX > 0) {
+          this.nextPosition.x = groundBounds.minX - roleBounds.width / 2;
+        } else if (deltaX < 0) {
+          this.nextPosition.x = groundBounds.maxX + roleBounds.width / 2;
+        }
+      }
+
+      // Check Y-Axis
+      if (
+        roleBounds.minX < groundBounds.maxX &&
+        roleBounds.maxX > groundBounds.minX &&
+        roleBounds.minY + deltaY < groundBounds.maxY &&
+        roleBounds.maxY + deltaY > groundBounds.minY
+      ) {
+        isCollided.y = true;
+        this.isGrounded = true;
+        this.velocity.y = 0;
+        this.nextPosition.y = groundBounds.minY - roleBounds.height / 2;
+      }
+
+      // Handle move outside the edge of ground
+      if (!isCollided.y) {
+        this.isGrounded = false;
+      }
+    }
+  }
+
   private addTicker(app: Application) {
     app.ticker.add((ticker) => {
-      this.handleMovement(ticker);
+      this.updateMovementInfo(ticker);
+      this.predictCollision();
+      this.handleMovement();
       this.handleTrailEffect();
     });
   }

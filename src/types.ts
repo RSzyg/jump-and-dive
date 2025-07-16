@@ -1,11 +1,15 @@
 import { PointData } from "pixi.js";
 
+export type MapInfo = ('o' | '-')[][];
+
 export interface GroundInfo {
-  map: ('o' | '-')[][];
-  edge: PointData[];
+  start: PointData;
+  unitWidth: number;
+  unitHeight: number;
 }
 
-export interface LevelInfo {
-  start: PointData;
+export interface WorldInfo {
+  roleStart: PointData;
+  map: MapInfo;
   groundList: GroundInfo[];
 }
