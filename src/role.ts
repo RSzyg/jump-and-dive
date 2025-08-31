@@ -2,6 +2,8 @@ import { AnimatedSprite, Application, Container, Graphics, Particle, ParticleCon
 import { sharedUserInput } from "./useUserInput";
 import { getLinearSmooth } from "./smooth";
 import { World } from "./world";
+import type { BoundingRect } from "./types";
+import { intersectAABBs } from "./utils/AABB";
 
 const roleBodySize = 16;
 const roleHandSize = 4;
@@ -83,6 +85,17 @@ export class Role {
   public isGrounded: boolean = false;
   public velocity: Point = new Point(0, 0);
 
+  get boundingRect(): BoundingRect {
+    return {
+      minX: this.roleMainPart.x - this.roleMainPart.anchor.x * this.roleMainPart.width,
+      minY: this.roleMainPart.y - this.roleMainPart.anchor.y * this.roleMainPart.height,
+      maxX: this.roleMainPart.x + this.roleMainPart.anchor.x * this.roleMainPart.width,
+      maxY: this.roleMainPart.y + this.roleMainPart.anchor.y * this.roleMainPart.height,
+      width: this.roleMainPart.width,
+      height: this.roleMainPart.height,
+    }
+  }
+
   constructor(app: Application, world: World) {
     this.world = world;
     this.roleMainPart = createRole(app.renderer);
@@ -98,10 +111,6 @@ export class Role {
     app.stage.addChild(this.trail, this.roleMainPart);
 
     this.addTicker(app);
-  }
-
-  public getBounds() {
-    return this.roleMainPart.getBounds();
   }
 
   public get position() {
@@ -171,47 +180,66 @@ export class Role {
   }
 
   private predictCollision() {
-    const roleBounds = this.getBounds();
+    const roleBoundingRect = this.boundingRect;
+
     const deltaX = this.nextPosition.x - this.position.x;
     const deltaY = this.nextPosition.y - this.position.y;
+    if (!deltaX && !deltaY) {
+      return;
+    }
 
-    let isCollided = { x: false, y: false };
-    for (const ground of this.world.entities) {
-      const groundBounds = ground.getBounds();
+    // Detect collision
+    for (const entityBoundingRect of this.world.entityBoundingRectList) {
+      const isOverlapped = intersectAABBs(roleBoundingRect, entityBoundingRect, { mainDelta: { x: deltaX, y: deltaY } })
+      if (!isOverlapped) {
+        continue
+      }
+
+      // Detect collision axis
+      const isXAxisOverlapped = intersectAABBs(roleBoundingRect, entityBoundingRect, { mainDelta: { x: deltaX, y: 0 } })
+      const isYAxisOverlapped = intersectAABBs(roleBoundingRect, entityBoundingRect, { mainDelta: { x: 0, y: deltaY } })
       
-      // Check X-Axis
-      if (
-        roleBounds.minX + deltaX < groundBounds.maxX &&
-        roleBounds.maxX + deltaX > groundBounds.minX &&
-        roleBounds.minY  < groundBounds.maxY &&
-        roleBounds.maxY > groundBounds.minY
-      ) {
-        isCollided.x = true;
+      let collisionCorrectionAxis: 'x' | 'y'
+      if (isXAxisOverlapped && !isYAxisOverlapped) {
+        collisionCorrectionAxis = 'x'
+      } else if (isYAxisOverlapped && !isXAxisOverlapped) {
+        collisionCorrectionAxis = 'y'
+      } else {
+        collisionCorrectionAxis = Math.abs(deltaX) < Math.abs(deltaY) ? 'x' : 'y'
+      }
+
+      // Handle X-Axis collision correction
+      if (collisionCorrectionAxis === 'x') {
         this.velocity.x = 0;
         if (deltaX > 0) {
-          this.nextPosition.x = groundBounds.minX - roleBounds.width / 2;
+          this.nextPosition.x = entityBoundingRect.minX - roleBoundingRect.width / 2;
         } else if (deltaX < 0) {
-          this.nextPosition.x = groundBounds.maxX + roleBounds.width / 2;
+          this.nextPosition.x = entityBoundingRect.maxX + roleBoundingRect.width / 2;
         }
       }
-
-      // Check Y-Axis
-      if (
-        roleBounds.minX < groundBounds.maxX &&
-        roleBounds.maxX > groundBounds.minX &&
-        roleBounds.minY + deltaY < groundBounds.maxY &&
-        roleBounds.maxY + deltaY > groundBounds.minY
-      ) {
-        isCollided.y = true;
-        this.isGrounded = true;
+      // Handle Y-Axis collision correction
+      if (collisionCorrectionAxis === 'y') {
         this.velocity.y = 0;
-        this.nextPosition.y = groundBounds.minY - roleBounds.height / 2;
+        if (deltaY > 0) {
+          this.isGrounded = true;
+          this.nextPosition.y = entityBoundingRect.minY - roleBoundingRect.height / 2;
+        } else if (deltaY < 0) {
+          this.nextPosition.y = entityBoundingRect.maxY + roleBoundingRect.height / 2;
+        }
       }
+    }
 
-      // Handle move outside the edge of ground
-      if (!isCollided.y) {
-        this.isGrounded = false;
+    // Detect role moving outside the edge of ground
+    let isRoleInAir = true
+    for (const entityBoundingRect of this.world.entityBoundingRectList) {
+      const isOverlapped = intersectAABBs(roleBoundingRect, entityBoundingRect, { mainDelta: { x: 0, y: 0.01 } })
+      if (isOverlapped) {
+        isRoleInAir = false
+        break
       }
+    }
+    if (isRoleInAir) {
+      this.isGrounded = false
     }
   }
 

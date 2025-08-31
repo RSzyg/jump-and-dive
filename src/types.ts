@@ -13,3 +13,12 @@ export interface WorldInfo {
   map: MapInfo;
   groundList: GroundInfo[];
 }
+
+export interface BoundingRect {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  width: number;
+  height: number;
+}

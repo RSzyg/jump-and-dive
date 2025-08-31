@@ -1,5 +1,5 @@
 import { Application, Container, Graphics, PointData, Polygon, Sprite, Texture } from "pixi.js";
-import { GroundInfo, WorldInfo } from "./types";
+import type { BoundingRect, GroundInfo, WorldInfo } from "./types";
 
 const groundPieceSize = 50;
 
@@ -16,6 +16,17 @@ export class World {
 
   get entities() {
     return this.container.children;
+  }
+
+  get entityBoundingRectList(): BoundingRect[] {
+    return this.entities.map(entity => ({
+      minX: entity.position.x,
+      minY: entity.position.y,
+      maxX: entity.position.x + entity.width,
+      maxY: entity.position.y + entity.height,
+      width: entity.width,
+      height: entity.height
+    }));
   }
 
   constructor(app: Application, mapInfo: WorldInfo) {
