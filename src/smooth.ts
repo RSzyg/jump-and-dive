@@ -5,11 +5,11 @@
  * @returns Interpolated value
  */
 export function getLinearSmooth(arr: number[], t: number): number {
-  const index = Math.floor(t);
-  const nextIndex = index + 1;
+  const index = Math.floor(t)
+  const nextIndex = index + 1
   if (nextIndex >= arr.length) {
-    return arr[arr.length - 1];
+    return arr[arr.length - 1]
   }
-  const weight = t - index;
-  return arr[index] * (1 - weight) + arr[nextIndex] * weight;
+  const weight = t - index
+  return arr[index] * (1 - weight) + arr[nextIndex] * weight
 }

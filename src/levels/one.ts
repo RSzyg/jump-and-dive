@@ -1,4 +1,4 @@
-import { WorldInfo } from "../types";
+import { WorldInfo } from '../types'
 
 const info: WorldInfo = {
   roleStart: { x: 6, y: 2 },
@@ -39,6 +39,6 @@ const info: WorldInfo = {
       unitHeight: 7,
     }
   ]
-};
+}
 
-export default info;
+export default info

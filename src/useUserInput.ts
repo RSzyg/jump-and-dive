@@ -1,38 +1,38 @@
 function useUserInput () {
-  let _isArrowLeftPressed = false;
-  let _isArrowRightPressed = false;
-  let _isArrowUpPressed = false;
+  let _isArrowLeftPressed = false
+  let _isArrowRightPressed = false
+  let _isArrowUpPressed = false
 
   const isArrowLeftPressed = () => {
-    return _isArrowLeftPressed;
+    return _isArrowLeftPressed
   }
   const isArrowRightPressed = () => {
-    return _isArrowRightPressed;
+    return _isArrowRightPressed
   }
   const isArrowUpPressed = () => {
-    return _isArrowUpPressed;
+    return _isArrowUpPressed
   }
 
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'ArrowRight') {
-      _isArrowRightPressed = true;
+      _isArrowRightPressed = true
     }
     if (event.key === 'ArrowLeft') {
-      _isArrowLeftPressed = true;
+      _isArrowLeftPressed = true
     }
     if (event.key === 'ArrowUp') {
-      _isArrowUpPressed = true;
+      _isArrowUpPressed = true
     }
   }
   const handleKeyUp = (event: KeyboardEvent) => {
     if (event.key === 'ArrowRight') {
-      _isArrowRightPressed = false;
+      _isArrowRightPressed = false
     }
     if (event.key === 'ArrowLeft') {
-      _isArrowLeftPressed = false;
+      _isArrowLeftPressed = false
     }
     if (event.key === 'ArrowUp') {
-      _isArrowUpPressed = false;
+      _isArrowUpPressed = false
     }
   }
 
@@ -55,4 +55,4 @@ function useUserInput () {
   }
 }
 
-export const sharedUserInput = useUserInput();
+export const sharedUserInput = useUserInput()
