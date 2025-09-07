@@ -20,4 +20,16 @@ import levelInfo from './levels/one'
   // Initialize the role
   const role = new Role(app, world)
 
+  app.ticker.add(() => {
+    // Camera follow the role
+    const { width, height } = app.renderer
+    const roleCenterRelativeView = { x: role.position.x + app.stage.position.x, y: role.position.y + app.stage.position.y }
+    const viewCenterPoint = { x: width / 2, y: height / 2 }
+
+    const delta = { x: roleCenterRelativeView.x - viewCenterPoint.x, y: roleCenterRelativeView.y - viewCenterPoint.y }
+
+    app.stage.position.x -= delta.x
+    app.stage.position.y -= delta.y
+  })
+
 })()
