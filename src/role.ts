@@ -4,6 +4,7 @@ import { getLinearSmooth } from './smooth'
 import { World } from './world'
 import type { BoundingRect } from './types'
 import { intersectAABBs } from './utils/AABB'
+import { translate } from './utils/boundingRect'
 
 const roleBodySize = 16
 const roleHandSize = 4
@@ -190,15 +191,15 @@ export class Role {
 
     // Detect collision
     for (const entityBoundingRect of this.world.entityBoundingRectList) {
-      const isOverlapped = intersectAABBs(roleBoundingRect, entityBoundingRect, { mainDelta: { x: deltaX, y: deltaY } })
+      const isOverlapped = intersectAABBs(translate(roleBoundingRect, deltaX, deltaY), entityBoundingRect)
       if (!isOverlapped) {
         continue
       }
 
       // Detect collision axis
-      const isXAxisOverlapped = intersectAABBs(roleBoundingRect, entityBoundingRect, { mainDelta: { x: deltaX, y: 0 } })
-      const isYAxisOverlapped = intersectAABBs(roleBoundingRect, entityBoundingRect, { mainDelta: { x: 0, y: deltaY } })
-      
+      const isXAxisOverlapped = intersectAABBs(translate(roleBoundingRect, deltaX, 0), entityBoundingRect)
+      const isYAxisOverlapped = intersectAABBs(translate(roleBoundingRect, 0, deltaY), entityBoundingRect)
+
       let collisionCorrectionAxis: 'x' | 'y'
       if (isXAxisOverlapped && !isYAxisOverlapped) {
         collisionCorrectionAxis = 'x'
@@ -232,7 +233,7 @@ export class Role {
     // Detect role moving outside the edge of ground
     let isRoleInAir = true
     for (const entityBoundingRect of this.world.entityBoundingRectList) {
-      const isOverlapped = intersectAABBs(roleBoundingRect, entityBoundingRect, { mainDelta: { x: 0, y: 0.01 } })
+      const isOverlapped = intersectAABBs(translate(roleBoundingRect, 0, 0.01), entityBoundingRect)
       if (isOverlapped) {
         isRoleInAir = false
         break
